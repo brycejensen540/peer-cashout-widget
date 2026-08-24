@@ -1,0 +1,418 @@
+/* ---------------------------------------------------------------------------
+   Peer Cash-out widget — plain CSS, no design system. One card, mobile-first.
+   --------------------------------------------------------------------------- */
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #f5f7fa;
+  --card: #ffffff;
+  --ink: #101828;
+  --muted: #667085;
+  --line: #e4e7ec;
+  --brand: #0b6bff;
+  --brand-dark: #0958d6;
+  --ok: #067647;
+  --ok-bg: #ecfdf3;
+  --warn: #b54708;
+  --warn-bg: #fffaeb;
+  --err: #b42318;
+  --err-bg: #fef3f2;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100vh;
+}
+
+/* ---- card -------------------------------------------------------------- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  padding: 24px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-head h1 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.subtitle {
+  margin: 4px 0 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--warn-bg);
+  color: var(--warn);
+  white-space: nowrap;
+}
+
+.badge-production {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+/* ---- wallet row --------------------------------------------------------- */
+.wallet-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.connect-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wallet-addr {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  background: #f2f4f7;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+/* ---- fields -------------------------------------------------------------- */
+.field {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  font-size: 15px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  outline: none;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(11, 107, 255, 0.15);
+}
+
+.amount-input {
+  display: flex;
+  gap: 8px;
+}
+
+.amount-input input {
+  flex: 1;
+}
+
+.field-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.field-hint.warn {
+  color: var(--warn);
+}
+
+/* ---- estimate box --------------------------------------------------------- */
+.estimate {
+  background: #eef4ff;
+  border: 1px solid #d6e4ff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 4px 0 16px;
+}
+
+.estimate-empty {
+  background: #f9fafb;
+  border-color: var(--line);
+}
+
+.estimate-amount {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.estimate-detail {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.estimate-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.estimate-placeholder {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ---- buttons --------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 16px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  width: 100%;
+  margin-top: 4px;
+  background: var(--brand);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--brand-dark);
+}
+
+.btn-ghost {
+  background: #fff;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: #f9fafb;
+}
+
+.btn-small {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+/* ---- messages ---------------------------------------------------------------- */
+.note,
+.error,
+.success {
+  font-size: 13px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 12px 0;
+}
+
+.note {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.error {
+  background: var(--err-bg);
+  color: var(--err);
+}
+
+.success {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+/* ---- order status ------------------------------------------------------------- */
+.order-summary {
+  margin: 16px 0 12px;
+}
+
+.order-summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.order-summary dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.order-summary dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: right;
+  word-break: break-word;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px !important;
+}
+
+.pill {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.pill-awaiting-buyer {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.pill-matched,
+.pill-delivering {
+  background: #eef4ff;
+  color: var(--brand);
+}
+
+.pill-delivered {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.pill-returned {
+  background: #f2f4f7;
+  color: var(--muted);
+}
+
+.status-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+  background: #f9fafb;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex: none;
+}
+
+.dot-live {
+  background: #22c55e;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.dot-idle {
+  background: var(--line);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.order-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.order-actions .btn-primary {
+  margin-top: 0;
+}
+
+.persist-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 16px 0 0;
+}
+
+/* ---- footer ------------------------------------------------------------------- */
+.foot {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.foot p {
+  margin: 6px 0;
+}
+
+.foot-env code {
+  background: #f2f4f7;
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
