@@ -15,6 +15,8 @@ off-ramp provider involved.
 > the full cash-out flow — connect → estimate → deposit → watch → deliver —
 > so an ecommerce site can later embed or adapt it.
 
+![Peer Cash-out widget: 50 USDC → Venmo with the live staging estimate](public/demo.png)
+
 ---
 
 ## Stack
@@ -33,6 +35,8 @@ npm run dev          # http://localhost:5173
 ```
 
 Other scripts: `npm run build` (typecheck + bundle) and `npm run typecheck`.
+`node scripts/capture-demo.mjs` regenerates `public/demo.png` (the screenshot
+above) — it renders the live app in headless Edge, so start `npm run dev` first.
 
 ### What you need to actually cash out
 
