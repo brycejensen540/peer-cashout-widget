@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Minimal MVP widget: cash out Base USDC to fiat via the Peer / ZKP2P protocol.",
+  "trustedDependencies": ["esbuild"],
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

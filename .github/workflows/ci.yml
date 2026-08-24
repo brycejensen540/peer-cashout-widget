@@ -1,0 +1,32 @@
+# CI for the Peer Cash-out widget: typecheck + production build on every
+# push (any branch) and pull request. Mirrors the portfolio repo's workflow
+# conventions (checkout@v4, setup-node@v4, Node 22 LTS, npm cache).
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  typecheck-and-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    concurrency:
+      group: ci-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Install from the lockfile (npm ci). Node 22 ships npm 10, which runs
+      # esbuild's postinstall normally; trustedDependencies in package.json
+      # keeps it working if CI ever moves to npm 11+.
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
