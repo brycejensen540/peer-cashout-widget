@@ -1,6 +1,6 @@
 // Throwaway utility: renders the live app in headless Edge and captures a
-// 2x PNG of the cash-out form in a demo state (50 USDC -> Venmo -> @andrew-w).
-// Uses only Node built-ins (global WebSocket in Node 22+).
+// 2x PNG of the cash-in tab (buy USDC) with the first live Peer order
+// selected. Uses only Node built-ins (global WebSocket in Node 22+).
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { get } from 'node:http';
@@ -82,6 +82,10 @@ const send = (method, params = {}) => {
     ws.send(JSON.stringify({ id, method, params }));
   });
 };
+const evalJs = async (expression) => {
+  const res = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
+  return res.result?.result?.value;
+};
 
 await send('Page.enable');
 await send('Runtime.enable');
@@ -93,34 +97,46 @@ await send('Emulation.setDeviceMetricsOverride', {
 });
 await send('Page.navigate', { url: TARGET });
 
-// Wait for the React app to mount and the form to render.
+// Wait for the React app to mount (tab bar present).
 for (let i = 0; i < 60; i++) {
-  const res = await send('Runtime.evaluate', {
-    expression: 'Boolean(document.querySelector(\'input[placeholder="0.00"]\'))',
-    returnByValue: true,
-  });
-  if (res.result?.result?.value === true) break;
+  if ((await evalJs("Boolean(document.querySelector('.tab'))")) === true) break;
   await sleep(200);
 }
-await sleep(800);
+await sleep(600);
 
-// Fill the demo state: amount 50, payee @andrew-w (platform stays Venmo).
-await send('Runtime.evaluate', {
-  expression: `(() => {
-    const input = document.querySelector('input[placeholder="0.00"]');
-    const payee = document.querySelector('input[placeholder^="e.g."]');
-    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-    setter.call(input, '50');
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    setter.call(payee, '@andrew-w');
-    payee.dispatchEvent(new Event('input', { bubbles: true }));
-    return true;
-  })()`,
-  returnByValue: true,
-});
+// Switch to the Cash in tab.
+await evalJs(`(() => {
+  const tabs = [...document.querySelectorAll('.tab')];
+  const cashin = tabs.find((t) => t.textContent.includes('Cash in'));
+  if (cashin) cashin.click();
+  return true;
+})()`);
 
-// Debounce (350ms) + live estimate fetch from the staging oracle.
-await sleep(2500);
+// Wait for the orderbook: either order rows or the empty-state note.
+let hasOrders = false;
+for (let i = 0; i < 40; i++) {
+  hasOrders = (await evalJs("Boolean(document.querySelector('.rowitem-btn'))")) === true;
+  const empty = (await evalJs(
+    "document.body.textContent.includes('No open orders')",
+  )) === true;
+  if (hasOrders || empty) break;
+  await sleep(250);
+}
+
+if (hasOrders) {
+  // Select the first live order -> selection panel with pre-filled amount.
+  // Retry until the panel actually renders (React re-render can detach the
+  // row mid-dispatch on the first click).
+  for (let i = 0; i < 10; i++) {
+    await evalJs("document.querySelector('.rowitem-btn')?.click()");
+    await sleep(400);
+    const panel = (await evalJs(
+      "Boolean(document.querySelector('.order-card'))",
+    )) === true;
+    if (panel) break;
+  }
+  await sleep(500);
+}
 
 const shot = await send('Page.captureScreenshot', { format: 'png' });
 const b64 = shot.result?.data;
@@ -130,7 +146,8 @@ if (!b64) {
   process.exit(1);
 }
 mkdirSync('public', { recursive: true });
-writeFileSync(OUT, Buffer.from(b64, 'base64'));
-console.log('saved', OUT, Buffer.from(b64, 'base64').length, 'bytes');
+const buf = Buffer.from(b64, 'base64');
+writeFileSync(OUT, buf);
+console.log('saved', OUT, buf.length, 'bytes', hasOrders ? '(first order selected)' : '(empty orderbook)');
 ws.close();
 chrome.kill();

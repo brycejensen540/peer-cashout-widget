@@ -1,23 +1,28 @@
-import { useCallback, useState } from 'react';
+import { lazy, Suspense, useCallback, useState } from 'react';
 import { useConnectorClient } from 'wagmi';
 import type { CashOrder, CashoutResult } from '@zkp2p/cash';
 import CashoutForm from './components/CashoutForm';
 import OrderStatus, { type PersistedOrder } from './components/OrderStatus';
 import { CASH_ENV } from './config';
 
+// The cash-in tab pulls in the full @zkp2p/sdk (orderbook + buyer TEE flow) —
+// lazy-load it so the cash-out path stays light.
+const CashinForm = lazy(() => import('./components/CashinForm'));
+
 // ---------------------------------------------------------------------------
-// App — the whole MVP is two screens: the cash-out form, and the live order
-// status view. The depositId (plus a little display metadata) is persisted to
-// localStorage so a refresh — or a later visit — resumes the same order.
+// App — the MVP is two screens per direction:
+//   - Cash out: form → live order status (resumes from the persisted
+//     depositId in localStorage).
+//   - Cash in:  orderbook browse → intent → payment proof → USDC received
+//     (resumes from the persisted intentHash).
 //
 // Widget-adaptation notes (for the ecommerce embed later):
-//   - All values can be pre-filled via props or URL params:
+//   - Cash-out values can be pre-filled via props or URL params:
 //       <App initialAmount="25" initialPayee="@merchant" initialPlatform="venmo" />
 //       /?amount=25&payee=%40merchant&platform=venmo
-//   - `onTerminal` fires once an order reaches delivered/returned — hook your
-//     "mark order as paid / show receipt" logic there. The merchant payee is
-//     what the buyer actually pays, so an ecommerce site would pass its own
-//     payout handle, not the shopper's.
+//   - `onTerminal` fires once a cash-out order reaches delivered/returned —
+//     hook your "mark order as paid" logic there. `onCashinComplete` fires
+//     when a buyer's USDC is released.
 // ---------------------------------------------------------------------------
 
 export interface CashoutWidgetProps {
@@ -27,8 +32,15 @@ export interface CashoutWidgetProps {
   initialPayee?: string;
   /** Prefill the payout platform id ('venmo' | 'wise' | 'revolut' | 'cashapp'). */
   initialPlatform?: string;
-  /** Called once when an order reaches a terminal state. */
+  /** Called once when a cash-out order reaches a terminal state. */
   onTerminal?: (info: { depositId: string; state: CashOrder['state'] }) => void;
+  /** Called once when a cash-in purchase releases USDC to the buyer. */
+  onCashinComplete?: (info: {
+    intentHash: string;
+    amount: bigint;
+    platform: string;
+    txHash: string;
+  }) => void;
 }
 
 const LS_KEY = 'peer-cashout:order';
@@ -67,7 +79,9 @@ export default function App({
   initialPayee,
   initialPlatform,
   onTerminal,
+  onCashinComplete,
 }: CashoutWidgetProps = {}) {
+  const [mode, setMode] = useState<'cashout' | 'cashin'>('cashout');
   const [persisted, setPersisted] = useState<PersistedOrder | null>(loadPersisted);
   const { data: walletClient } = useConnectorClient();
 
@@ -113,7 +127,31 @@ export default function App({
 
   return (
     <main className="page">
-      {persisted ? (
+      {/* Direction tabs — cash in (buy) vs cash out (sell) */}
+      <nav className="tabs" role="tablist">
+        <button
+          role="tab"
+          aria-selected={mode === 'cashout'}
+          className={`tab ${mode === 'cashout' ? 'tab-on' : ''}`}
+          onClick={() => setMode('cashout')}
+        >
+          Cash out (USDC → fiat)
+        </button>
+        <button
+          role="tab"
+          aria-selected={mode === 'cashin'}
+          className={`tab ${mode === 'cashin' ? 'tab-on' : ''}`}
+          onClick={() => setMode('cashin')}
+        >
+          Cash in (fiat → USDC)
+        </button>
+      </nav>
+
+      {mode === 'cashin' ? (
+        <Suspense fallback={<div className="card">Loading buy flow…</div>}>
+          <CashinForm onCashinComplete={onCashinComplete} />
+        </Suspense>
+      ) : persisted ? (
         <OrderStatus
           order={persisted}
           signer={walletClient}
@@ -131,13 +169,13 @@ export default function App({
 
       <footer className="foot">
         <p>
-          <strong>MVP demo.</strong> Liquidity and settlement time depend on the Peer network —
-          a buyer must pick up your order and pay the merchant’s payment-app handle. The rate
-          is an estimate at fill time; there is no locked quote.
+          <strong>MVP demo.</strong> Both directions run on the real Peer / ZKP2P protocol on Base.
+          Liquidity and settlement time depend on the Peer network — a counterparty must take your
+          order. Rates are estimates at fill time; there is no locked quote.
         </p>
         <p className="foot-env">
-          Peer Cash environment: <code>{CASH_ENV}</code> · Base mainnet ·{' '}
-          <a href="https://docs.zkp2p.xyz" target="_blank" rel="noreferrer">
+          Peer environment: <code>{CASH_ENV}</code> · Base mainnet ·{' '}
+          <a href="https://docs.peer.xyz" target="_blank" rel="noreferrer">
             docs
           </a>
         </p>
